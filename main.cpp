@@ -68,6 +68,9 @@ ofstream resultFile;
 ofstream dataFile;
 ifstream expectedValueFile;
 
+//function header
+void drawPathMarkers(Mat&, vector<RectSpecs>);
+
 string convertInt(int number){
     stringstream ss;//create a stringstream
     ss << number;//add number to the stream
@@ -111,6 +114,7 @@ void generateGUI(){
 
 void updateGUI(){
     //show the images in the windows
+    drawPathMarkers(frame, pathMarkers);
     imshow("Original", frame);
     imshow("HSV", hsvFrame);
     imshow("Binary", binaryFrame);
@@ -273,7 +277,7 @@ RectSpecs findRectSpec (vector<Point> rectContour){
     return my_rect;
 }
 
-void drawPathMarkers(){
+void drawPathMarkers(Mat &frame, vector<RectSpecs> pathMarkers){
     for(int i = 0; i < pathMarkers.size(); i++)
     {
         //draw the rotated rectangle
@@ -295,11 +299,21 @@ void drawPathMarkers(){
     }
 }
 
-void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV1, Scalar upperBoundHSV1, Mat &hsvFrame, Mat &binaryFrame, vector<vector<Point> > &unprocessedContours, vector<RectSpecs> &pathMarkers){
+void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV, Scalar upperBoundHSV, Mat &hsvFrame, Mat &binaryFrame, vector<vector<Point> > &unprocessedContours, vector<RectSpecs> &pathMarkers){
     //resize the frame
     //resize(frame,frame,Size(frame.cols * resizeRatio , frame.rows * resizeRatio ));
     cvtColor(unprocessedFrame, hsvFrame, CV_BGR2HSV);
-    inRange(hsvFrame,Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX),binaryFrame);
+    //special case for red in which the lower bound's hue is numerically higher than upper bound's hue, eg, 170 - 10
+    if(lowerBoundHSV[0] > upperBoundHSV[0]){
+        cout << "lower" << endl;
+        Mat temp;
+        inRange(hsvFrame,lowerBoundHSV,Scalar(180, upperBoundHSV[1], upperBoundHSV[2]),binaryFrame);
+        inRange(hsvFrame,Scalar(0, lowerBoundHSV[1], lowerBoundHSV[2]),upperBoundHSV,temp);
+        bitwise_or(temp, binaryFrame, binaryFrame);
+    }
+    else{
+        inRange(hsvFrame,lowerBoundHSV,upperBoundHSV,binaryFrame);
+    }
     erodeDilate(11, binaryFrame);
     erodeDilate(11, binaryFrame);
     findContours(binaryFrame.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
@@ -309,13 +323,6 @@ void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV1, Scalar upperBoun
         vector<Point> pathMarker(4);
         RectSpecs pathMarkerSpecs = findRectSpec(unprocessedContours[i]);
         pathMarkers.push_back(pathMarkerSpecs);
-    }
-}
-
-void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV1, Scalar upperBoundHSV1, Scalar lowerBoundHSV2, Scalar upperBoundHSV2, Mat &hsvFrame, Mat &binaryFrame, vector<vector<Point> > &unprocessedContours, vector<vector<Point> > &pathMarkers){
-    //special case for red, which wraps around the hue axis
-    if( &lowerBoundHSV2 != NULL){
-        // \todo red hsv
     }
 }
 
