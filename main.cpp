@@ -8,9 +8,23 @@
 using namespace cv;
 using namespace std;
 
+struct RectSpecs {
+//specifiy a type of data structure for the rectangle's specs
+    vector<vector<Point> > contour;
+    Point2f pXY;    Point2f cXY;
+    float width;    float height;       float angle;
+    double area;    float distance;     bool ignore;
+};
+
 //set the saved result image's filename to record the result of different settings
 string settingTitle = "Default";
 string dataDir;
+
+//UI key constant for visual debugging
+int ESCAPE = 1048603;
+int SPACE = 1048608;
+int RIGHT = 2555904;
+int LEFT = 2424832;
 
 //Video file
 string videoFilePath = "../../sample videos/Pipe.avi";
@@ -49,55 +63,54 @@ Mat binaryFrame; //black and white frame with white being the color of interest
 Mat erodeKernel;
 Mat dilateKernel;
 vector<vector<Point> > contours;
-vector<Vec4i> hierarchy;
+vector<RectSpecs> pathMarkers;
 ofstream resultFile;
 ofstream dataFile;
 ifstream expectedValueFile;
 
-struct rectSpecs {
-//specifiy a type of data structure for the rectangle's specs
-    vector<vector<Point> > contour;
-    Point2f pXY;    Point2f cXY;
-    float width;    float height;       float angle;
-    double area;    float distance;     bool ignore;
-};
-
-vector<rectSpecs> pathMarkers;
-
-string convertInt(int number)
-{
+string convertInt(int number){
     stringstream ss;//create a stringstream
     ss << number;//add number to the stream
     return ss.str();//return a string with the contents of the stream
 }
-
-void generateGUI()
-{
+int waitKeyTime = 30;
+void generateGUI(){
     //create the windows
     namedWindow( "Original", WINDOW_NORMAL );
+    namedWindow( "HSV", WINDOW_NORMAL );
     namedWindow( "Binary", WINDOW_NORMAL );
+    namedWindow( "Playback", WINDOW_NORMAL );
     namedWindow( "Control", WINDOW_NORMAL );
-    createTrackbar("Frame", "Control", &videoPos, cap.get(CV_CAP_PROP_FRAME_COUNT));
+    createTrackbar("Frame", "Playback", &videoPos, cap.get(CV_CAP_PROP_FRAME_COUNT));
+    createTrackbar("H min", "Control", &H_MIN, 180);
+    createTrackbar("H max", "Control", &H_MAX, 180);
+    createTrackbar("S min", "Control", &S_MIN, 255);
+    createTrackbar("S max", "Control", &S_MAX, 255);
+    createTrackbar("V min", "Control", &V_MIN, 255);
+    createTrackbar("V max", "Control", &V_MAX, 255);
+    createTrackbar("waitKeyTime", "Control", &waitKeyTime, 100);
 
-    //base width and height better position windows for debugging purpose
+    //base width and height are derived from frame size, used to better position windows for debugging purpose
     //resize the windows
     int baseWidth, baseHeight;
-    baseWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH);
-    baseHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+    baseWidth = (int)(cap.get(CV_CAP_PROP_FRAME_WIDTH)*0.8);
+    baseHeight = (int)(cap.get(CV_CAP_PROP_FRAME_HEIGHT)*0.8);
     resizeWindow("Original", baseWidth, baseHeight);
+    resizeWindow("HSV", baseWidth, baseHeight);
     resizeWindow("Binary", baseWidth, baseHeight);
-    resizeWindow("Control", 1280, 50);
+    resizeWindow("Playback", 800, 50);
 
     //move the windows
-    moveWindow("Original", 0, 100);
-    moveWindow("Binary", baseWidth, 100);
-    moveWindow("Control", 0, baseHeight+125);
+    moveWindow("Original", 0, 0);
+    moveWindow("HSV", baseWidth, 0);
+    moveWindow("Binary", baseWidth*2, 0);
+    moveWindow("Playback", 0, baseHeight+25);
+    moveWindow("Control", 800, baseHeight+25);
 }
-
-void updateGUI()
-{
+void updateGUI(){
     //show the images in the windows
     imshow("Original", frame);
+    imshow("HSV", hsvFrame);
     imshow("Binary", binaryFrame);
 
     //update time trackbar
@@ -108,13 +121,10 @@ void updateGUI()
     else
     {
         videoPos++;
-        setTrackbarPos("Frame", "Control", videoPos);
+        setTrackbarPos("Frame", "Playback", videoPos);
     }
-    waitKey(slowMotionms);
 }
-
-void SaveResult()
-{
+void SaveResult(){
     //Open result file
     if(!resultFile.is_open())
     {
@@ -146,26 +156,20 @@ void SaveResult()
         wrongContourNum = 0;
     }
 }
-
-void loadExpectedValue()
-{
+void loadExpectedValue(){
     //Open expected value file
     expectedValueFile.open((char*)eVFilePath.c_str());
     for (int j=0; j<=videoFrameSize; j++)
         expectedValueFile >> expectedValue[j];
 }
-
-void erodeDilate(int sizeIndex)
-{
+void erodeDilate(int sizeIndex, Mat &frame){
     //erode & dilate the binaryframe
     erodeKernel = getStructuringElement( MORPH_RECT, Size(sizeIndex , sizeIndex));    // 11*11   20*20   30*30
     dilateKernel = erodeKernel;
     erode(binaryFrame, binaryFrame, erodeKernel);
     dilate(binaryFrame, binaryFrame, dilateKernel);
 }
-
-void setLabel(Mat im, string label, Point org)
-{
+void setLabel(Mat im, string label, Point org){
     int fontface = FONT_HERSHEY_SIMPLEX;
     double scale = 0.4;
     int thickness = 1;
@@ -174,9 +178,7 @@ void setLabel(Mat im, string label, Point org)
     rectangle(im, org + Point(0, baseline), org + Point(text.width, -text.height), CV_RGB(0,0,0), CV_FILLED);
     putText(im, label, org, fontface, scale, CV_RGB(255,255,255), thickness, 8);
 }
-
-rectSpecs findRectSpec (vector<Point> rectContour)
-{
+RectSpecs findRectSpec (vector<Point> rectContour){
     //get the moments and centers of the contour
     Moments mu = moments( rectContour, false );
     Point2f cXY = Point2f(mu.m10/mu.m00, mu.m01/mu.m00);
@@ -243,7 +245,7 @@ rectSpecs findRectSpec (vector<Point> rectContour)
     }
 
     //put all specs to a "rectSpecs" data structure
-    rectSpecs my_rect;
+    RectSpecs my_rect;
     my_rect.contour = rectContours;
     my_rect.width = rectWidth;
     my_rect.height = rectHeight;
@@ -255,17 +257,15 @@ rectSpecs findRectSpec (vector<Point> rectContour)
 
     //set to ignore the contour as a pathMarker
     //if it's not near by the frame & the area of the contour is small
-    if (dst > ignoreRectDist && my_rect.area < ignoreRectArea)
-        my_rect.ignore = true;
-    else
-        my_rect.ignore = false;
+//    if (dst > ignoreRectDist && my_rect.area < ignoreRectArea)
+//        my_rect.ignore = true;
+//    else
+//        my_rect.ignore = false;
 
     //return the rectSpecs
     return my_rect;
 }
-
-void drawPathMarkers()
-{
+void drawPathMarkers(){
     for(int i = 0; i < pathMarkers.size(); i++)
     {
         //draw the rotated rectangle
@@ -286,81 +286,64 @@ void drawPathMarkers()
         setLabel(frame, "Min distance to frame: " + convertInt(pathMarkers[i].distance), Point(textPosX,textPosY+100));
     }
 }
-
-int ProcessFrames()
-{
-    cap =  VideoCapture(videoFilePath);     //input video file or from camera
-    if(!cap.isOpened()) {return -1;}
-    loadExpectedValue();                    //load expected values of number of contours from text file
-    generateGUI();                          //generate GUI
-    isPaused = false;
-
-    while(true)
+void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV1, Scalar upperBoundHSV1, Mat &hsvFrame, Mat &binaryFrame, vector<vector<Point> > &unprocessedContours, vector<RectSpecs> &pathMarkers){
+    //resize the frame
+    //resize(frame,frame,Size(frame.cols * resizeRatio , frame.rows * resizeRatio ));
+    cvtColor(unprocessedFrame, hsvFrame, CV_BGR2HSV);
+    inRange(hsvFrame,Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX),binaryFrame);
+    erodeDilate(11, binaryFrame);
+    erodeDilate(11, binaryFrame);
+    findContours(binaryFrame.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    pathMarkers.clear();
+    for(int i = 0; i < unprocessedContours.size(); i++)
     {
-        if (videoPos > endVideoPos) {return 0;}     //end the loop when the video reach the end
-        cap.set(CV_CAP_PROP_POS_FRAMES, videoPos);
-        cap >> frame;                               //capture the frame from the video at the current position
-
-        //resize the frame
-        //resize(frame,frame,Size(frame.cols * resizeRatio , frame.rows * resizeRatio ));
-
-        //filter the frame
-        cvtColor(frame, hsvFrame, CV_BGR2HSV);                                              //convert to HSV
-        inRange(hsvFrame,Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX),binaryFrame);  //Filter orange color and create binary frame
-        //erodeDilate(erodeKernelSize);                                                                    //erode & dilate the binary frame
-
-        //find the contours
-        findContours(binaryFrame.clone(), contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-        //find the pathMarkers specs from the contours
-        pathMarkers.clear();
-        for(int i = 0; i < contours.size(); i++)
-        {
-            pathMarkers.push_back(findRectSpec(contours[i]));
-            if (pathMarkers[pathMarkers.size()-1].ignore)
-                pathMarkers.pop_back();
-        }
-
-        //draw the PathMarkers
-        drawPathMarkers();
-
-        //Save Result
-        SaveResult();
-
-        //update GUI
-        updateGUI();
-
-        //Control keys for video
-        int userPressedKey = waitKey(30);
-        //cout << userPressedKey << endl;
-        do{
-            if(userPressedKey == 1048603){//escape key
-                return 0;
-            }else if(userPressedKey == 1048608 && !isPaused){ //space key and pause
-                isPaused = !isPaused;
-                userPressedKey = waitKey(0);
-            }else if(userPressedKey == 1048608){ //space key and resume
-                isPaused = !isPaused;
-                break;
-            }
-        }while(isPaused);
+        vector<Point> pathMarker(4);
+        RectSpecs pathMarkerSpecs = findRectSpec(unprocessedContours[i]);
+        pathMarkers.push_back(pathMarkerSpecs);
     }
-    return 0;
 }
-
-int main(int argc, char *argv[])
-{
-    //Change settings
-    settingTitle = "Default";
-    erodeKernelSize = 11;
+void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV1, Scalar upperBoundHSV1, Scalar lowerBoundHSV2, Scalar upperBoundHSV2, Mat &hsvFrame, Mat &binaryFrame, vector<vector<Point> > &unprocessedContours, vector<vector<Point> > &pathMarkers){
+    //special case for red, which wraps around the hue axis
+    if( &lowerBoundHSV2 != NULL){
+        // \todo red hsv
+    }
+}
+int main(int argc, char *argv[]){
     H_MIN = 0;
     H_MAX = 30;
     S_MIN = 0;
-    S_MAX = 256;
+    S_MAX = 255;
     V_MIN = 200;
-    V_MAX = 256;
-    ignoreRectDist = 10;
-    ignoreRectArea = 300;
-    //Process frames
-    ProcessFrames();
+    V_MAX = 255;
+    cap =  VideoCapture(videoFilePath);     //input video file or from camera
+    if(!cap.isOpened()) {return -1;}
+    generateGUI();
+    int inputKey = -1;
+    //using read instead of >> operator because read return false if reached the end
+    while(cap.read(frame) && inputKey != ESCAPE && videoPos < endVideoPos){
+        processFrame(frame, Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX), hsvFrame, binaryFrame, contours, pathMarkers);
+        updateGUI();
+        inputKey = waitKey(waitKeyTime);
+        if(inputKey == SPACE){//space key pressed, then video enter paused state
+            do{
+                inputKey = waitKey(0);
+                if(inputKey == RIGHT){//right key
+                    processFrame(frame, Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX), hsvFrame, binaryFrame, contours, pathMarkers);
+                    updateGUI();
+                }else if(inputKey == LEFT && videoPos >= 0){
+                    videoPos--;
+                    processFrame(frame, Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX), hsvFrame, binaryFrame, contours, pathMarkers);
+                    updateGUI();
+                }
+            }while(inputKey != SPACE && inputKey != ESCAPE);//space key pressed again to resume
+        }
+    }
 }
+
+
+
+
+
+
+
+
