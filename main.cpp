@@ -73,6 +73,7 @@ string convertInt(int number){
     ss << number;//add number to the stream
     return ss.str();//return a string with the contents of the stream
 }
+
 int waitKeyTime = 30;
 void generateGUI(){
     //create the windows
@@ -107,6 +108,7 @@ void generateGUI(){
     moveWindow("Playback", 0, baseHeight+25);
     moveWindow("Control", 800, baseHeight+25);
 }
+
 void updateGUI(){
     //show the images in the windows
     imshow("Original", frame);
@@ -124,6 +126,7 @@ void updateGUI(){
         setTrackbarPos("Frame", "Playback", videoPos);
     }
 }
+
 void SaveResult(){
     //Open result file
     if(!resultFile.is_open())
@@ -156,12 +159,14 @@ void SaveResult(){
         wrongContourNum = 0;
     }
 }
+
 void loadExpectedValue(){
     //Open expected value file
     expectedValueFile.open((char*)eVFilePath.c_str());
     for (int j=0; j<=videoFrameSize; j++)
         expectedValueFile >> expectedValue[j];
 }
+
 void erodeDilate(int sizeIndex, Mat &frame){
     //erode & dilate the binaryframe
     erodeKernel = getStructuringElement( MORPH_RECT, Size(sizeIndex , sizeIndex));    // 11*11   20*20   30*30
@@ -169,6 +174,7 @@ void erodeDilate(int sizeIndex, Mat &frame){
     erode(binaryFrame, binaryFrame, erodeKernel);
     dilate(binaryFrame, binaryFrame, dilateKernel);
 }
+
 void setLabel(Mat im, string label, Point org){
     int fontface = FONT_HERSHEY_SIMPLEX;
     double scale = 0.4;
@@ -178,6 +184,7 @@ void setLabel(Mat im, string label, Point org){
     rectangle(im, org + Point(0, baseline), org + Point(text.width, -text.height), CV_RGB(0,0,0), CV_FILLED);
     putText(im, label, org, fontface, scale, CV_RGB(255,255,255), thickness, 8);
 }
+
 RectSpecs findRectSpec (vector<Point> rectContour){
     //get the moments and centers of the contour
     Moments mu = moments( rectContour, false );
@@ -265,6 +272,7 @@ RectSpecs findRectSpec (vector<Point> rectContour){
     //return the rectSpecs
     return my_rect;
 }
+
 void drawPathMarkers(){
     for(int i = 0; i < pathMarkers.size(); i++)
     {
@@ -286,6 +294,7 @@ void drawPathMarkers(){
         setLabel(frame, "Min distance to frame: " + convertInt(pathMarkers[i].distance), Point(textPosX,textPosY+100));
     }
 }
+
 void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV1, Scalar upperBoundHSV1, Mat &hsvFrame, Mat &binaryFrame, vector<vector<Point> > &unprocessedContours, vector<RectSpecs> &pathMarkers){
     //resize the frame
     //resize(frame,frame,Size(frame.cols * resizeRatio , frame.rows * resizeRatio ));
@@ -302,12 +311,14 @@ void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV1, Scalar upperBoun
         pathMarkers.push_back(pathMarkerSpecs);
     }
 }
+
 void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV1, Scalar upperBoundHSV1, Scalar lowerBoundHSV2, Scalar upperBoundHSV2, Mat &hsvFrame, Mat &binaryFrame, vector<vector<Point> > &unprocessedContours, vector<vector<Point> > &pathMarkers){
     //special case for red, which wraps around the hue axis
     if( &lowerBoundHSV2 != NULL){
         // \todo red hsv
     }
 }
+
 int main(int argc, char *argv[]){
     H_MIN = 0;
     H_MAX = 30;
