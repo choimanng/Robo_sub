@@ -52,6 +52,8 @@ int S_MAX = 256;
 int V_MIN = 0;//200;
 int V_MAX = 256;
 int erodeKernelSize = 11;
+Mat erodeDilateKernel = getStructuringElement( MORPH_RECT, Size(erodeKernelSize , erodeKernelSize));
+int erodeDilateRepeat;
 int ignoreRectDist = 10;
 int ignoreRectArea = 300;
 
@@ -60,14 +62,11 @@ VideoCapture cap;
 Mat frame; //original one frame from video
 Mat hsvFrame; //segmented frame in hsv colorspace
 Mat binaryFrame; //black and white frame with white being the color of interest
-Mat erodeKernel;
-Mat dilateKernel;
 vector<vector<Point> > contours;
 vector<RectSpecs> pathMarkers;
 ofstream resultFile;
 ofstream dataFile;
 ifstream expectedValueFile;
-
 //function header
 void drawPathMarkers(Mat&, vector<RectSpecs>);
 
@@ -169,14 +168,6 @@ void loadExpectedValue(){
     expectedValueFile.open((char*)eVFilePath.c_str());
     for (int j=0; j<=videoFrameSize; j++)
         expectedValueFile >> expectedValue[j];
-}
-
-void erodeDilate(int sizeIndex, Mat &frame){
-    //erode & dilate the binaryframe
-    erodeKernel = getStructuringElement( MORPH_RECT, Size(sizeIndex , sizeIndex));    // 11*11   20*20   30*30
-    dilateKernel = erodeKernel;
-    erode(binaryFrame, binaryFrame, erodeKernel);
-    dilate(binaryFrame, binaryFrame, dilateKernel);
 }
 
 void setLabel(Mat im, string label, Point org){
@@ -299,13 +290,12 @@ void drawPathMarkers(Mat &frame, vector<RectSpecs> pathMarkers){
     }
 }
 
-void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV, Scalar upperBoundHSV, Mat &hsvFrame, Mat &binaryFrame, vector<vector<Point> > &unprocessedContours, vector<RectSpecs> &pathMarkers){
+void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV, Scalar upperBoundHSV, Mat &hsvFrame, Mat &binaryFrame, Mat &erodeDilateKernel, int erodeDilateRepeat, vector<vector<Point> > &unprocessedContours, vector<RectSpecs> &pathMarkers){
     //resize the frame
     //resize(frame,frame,Size(frame.cols * resizeRatio , frame.rows * resizeRatio ));
     cvtColor(unprocessedFrame, hsvFrame, CV_BGR2HSV);
     //special case for red in which the lower bound's hue is numerically higher than upper bound's hue, eg, 170 - 10
     if(lowerBoundHSV[0] > upperBoundHSV[0]){
-        cout << "lower" << endl;
         Mat temp;
         inRange(hsvFrame,lowerBoundHSV,Scalar(180, upperBoundHSV[1], upperBoundHSV[2]),binaryFrame);
         inRange(hsvFrame,Scalar(0, lowerBoundHSV[1], lowerBoundHSV[2]),upperBoundHSV,temp);
@@ -314,8 +304,12 @@ void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV, Scalar upperBound
     else{
         inRange(hsvFrame,lowerBoundHSV,upperBoundHSV,binaryFrame);
     }
-    erodeDilate(11, binaryFrame);
-    erodeDilate(11, binaryFrame);
+
+    //repeat "erodeDilateRepeat" many times of eroding and dilating
+    for(int i = 0; i < erodeDilateRepeat; i++){
+        erode(binaryFrame, binaryFrame, erodeDilateKernel);
+        dilate(binaryFrame, binaryFrame, erodeDilateKernel);
+    }
     findContours(binaryFrame.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
     pathMarkers.clear();
     for(int i = 0; i < unprocessedContours.size(); i++)
@@ -326,6 +320,45 @@ void processFrame(Mat &unprocessedFrame, Scalar lowerBoundHSV, Scalar upperBound
     }
 }
 
+void processVideo(){
+    cap =  VideoCapture(videoFilePath);     //input video file or from camera
+    if(!cap.isOpened()) {return;}
+    //open csv file to write to
+    ofstream cvsResultFile;
+    cvsResultFile.open("Pipes.cvs", ios::app);
+    int result[4964];
+    generateGUI();
+    int inputKey = -1;
+    int iii = 0;
+    //using read instead of >> operator because read return false if reached the end
+    while(cap.read(frame) && inputKey != ESCAPE && videoPos < endVideoPos){
+        processFrame(frame, Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX), hsvFrame, binaryFrame, erodeDilateKernel, erodeDilateRepeat, contours, pathMarkers);
+        updateGUI();
+        inputKey = waitKey(waitKeyTime);
+        if(inputKey == SPACE){//space key pressed, then video enter paused state
+            do{
+                inputKey = waitKey(0);
+                if(inputKey == RIGHT){//right key
+                    processFrame(frame, Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX), hsvFrame, binaryFrame, erodeDilateKernel, erodeDilateRepeat, contours, pathMarkers);
+                    updateGUI();
+                }else if(inputKey == LEFT && videoPos >= 0){
+                    videoPos--;
+                    processFrame(frame, Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX), hsvFrame, binaryFrame, erodeDilateKernel, erodeDilateRepeat, contours, pathMarkers);
+                    updateGUI();
+                }
+            }while(inputKey != SPACE && inputKey != ESCAPE);//space key pressed again to resume
+        }
+        result[iii] = pathMarkers.size();
+        iii++;
+    }
+    stringstream resultCVSString;
+        for(int i = 0; i < 4964; i++)
+            resultCVSString << "," << result[i];
+    cout << resultCVSString.str() << endl;
+    cvsResultFile << "H_MIN=" << H_MIN << ";H_MAX=" <<H_MAX << ";S_MIN=" <<
+    S_MIN<< ";S_MAX=" << S_MAX<<";V_MIN=" <<V_MIN<<";V_MAX="<<V_MAX<< ";erodeKernelSize="<<erodeKernelSize<<resultCVSString.str()<<endl;
+}
+
 int main(int argc, char *argv[]){
     H_MIN = 0;
     H_MAX = 30;
@@ -333,29 +366,12 @@ int main(int argc, char *argv[]){
     S_MAX = 255;
     V_MIN = 200;
     V_MAX = 255;
-    cap =  VideoCapture(videoFilePath);     //input video file or from camera
-    if(!cap.isOpened()) {return -1;}
-    generateGUI();
-    int inputKey = -1;
-    //using read instead of >> operator because read return false if reached the end
-    while(cap.read(frame) && inputKey != ESCAPE && videoPos < endVideoPos){
-        processFrame(frame, Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX), hsvFrame, binaryFrame, contours, pathMarkers);
-        updateGUI();
-        inputKey = waitKey(waitKeyTime);
-        if(inputKey == SPACE){//space key pressed, then video enter paused state
-            do{
-                inputKey = waitKey(0);
-                if(inputKey == RIGHT){//right key
-                    processFrame(frame, Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX), hsvFrame, binaryFrame, contours, pathMarkers);
-                    updateGUI();
-                }else if(inputKey == LEFT && videoPos >= 0){
-                    videoPos--;
-                    processFrame(frame, Scalar(H_MIN,S_MIN,V_MIN),Scalar(H_MAX,S_MAX,V_MAX), hsvFrame, binaryFrame, contours, pathMarkers);
-                    updateGUI();
-                }
-            }while(inputKey != SPACE && inputKey != ESCAPE);//space key pressed again to resume
-        }
+    for(int i = 1; i < 4; i++)
+    {
+        erodeDilateRepeat = i;
+        processVideo();
     }
+
 }
 
 
@@ -365,3 +381,4 @@ int main(int argc, char *argv[]){
 
 
 
+//each run takes around 345 seconds = 5.6 min
