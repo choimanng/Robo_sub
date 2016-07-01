@@ -66,7 +66,9 @@ void VideoGroundTruthGenerator::processVideo(){
         inputKey = waitKey();
     }while(!isNumberKey(inputKey));
     currentFrameGroundTruth = inputKey-ZERO;
+    recordCurrentFrameResult();
     updateGUI();
+
     //read video until eof
     while(inputKey!=ESCAPE && cap.read(unprocessedFrame)){
         updateGUI();
@@ -75,7 +77,6 @@ void VideoGroundTruthGenerator::processVideo(){
         if(inputKey == SPACE){
             do{
                 inputKey = waitKey();
-                cout << inputKey << endl;
                 if(isNumberKey(inputKey)){
                     currentFrameGroundTruth = inputKey-ZERO;
                     recordCurrentFrameResult();
@@ -139,19 +140,21 @@ void VideoGroundTruthGenerator::processVideo(){
 
 void VideoGroundTruthGenerator::writeResultToCSV(char* csvPath){
     //open output file
-    ofstream cvsResultFile;
-    cvsResultFile.open(csvPath, ios_base::app);
+    ofstream csvResultFile;
+    csvResultFile.open(csvPath, ios_base::app);
+    if(!csvResultFile.is_open()){
+        cout << "cannot open csv file. check file path?" << endl;
+        return;
+    }
 
     //write setting to csv file
-    cvsResultFile << "ground truth,n/a";
+    csvResultFile << endl << "ground truth,n/a,n/a,n/a,n/a";
 
     //write individual frame's target count in this processing
     int frameCount = (int)cap.get(CV_CAP_PROP_FRAME_COUNT);
     for (int j=0; j<frameCount; j++){
-        cvsResultFile << "," << expectedValues[j];
+        csvResultFile << "," << expectedValues[j];
+        cout << expectedValues[j] << endl;;
     }
-    cvsResultFile << endl;
-    cvsResultFile.close();
-//    for(int i = 0; i < 100; i++)
-//        cout << expectedValues[i];
+    csvResultFile.close();
 }
