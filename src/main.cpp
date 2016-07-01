@@ -7,14 +7,24 @@ using namespace std;
 
 int main(int argc, char *argv[]){
     cout << "main.cpp running" << endl;
-//    DownVideoProcessor v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
-//    v.processVideoDebug();
+    DownVideoProcessor v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
+    v.processVideoDebug();
 //    v.loadExpectedValue("./result/Pipe_Data.txt");
 //    v.writeResultToCSV("./result/Pipes_Result.cvs");
 
-    VideoGroundTruthGenerator v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
-    v.processVideo();
-    v.writeResultToCSV("result/000Pipes_Result_Final.csv");
+//    VideoGroundTruthGenerator v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
+//    v.processVideo();
+//    v.writeResultToCSV("result/000Pipes_Result_Final.csv");
+
+//    VideoProcessor v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
+//    v.loadExpectedValue("result/Pipe_Data.txt");
+//    int* old = v.expectedValues;
+//    v.loadExpectedValueFromCSV("result/000Pipes_Result_Final.csv");
+//    int* newE = v.expectedValues;
+//    for(int i = 0; i < 4500; i++){
+//        cout << i << ": " << (old[i] - newE[i]) << endl;
+//    }
+
 }
 
 

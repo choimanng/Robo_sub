@@ -8,6 +8,9 @@
 #include <math.h>
 #include <string>
 #include <fstream>
+#include <stdio.h>
+#include <string.h>
+#include <string>
 
 using namespace cv;
 using namespace std;
@@ -68,6 +71,7 @@ void processVideoDebug();
 String getSetting();
 
 //recording and comparing result
+void loadExpectedValueFromCSV(char* eVFilePath);
 void loadExpectedValue(char* eVFilePath);
 void writeResultToCSV(char* csvPath);
 };

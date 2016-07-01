@@ -82,7 +82,7 @@ void VideoProcessor::generateGUI(){
     createTrackbar("S max", "Control", &S_MAX, 255);
     createTrackbar("V min", "Control", &V_MIN, 255);
     createTrackbar("V max", "Control", &V_MAX, 255);
-    createTrackbar("waitKeyTime", "Control", &waitKeyTime, 100);
+    createTrackbar("waitKeyTime", "Control", &waitKeyTime, 500);
 
     //base width and height are derived from frame size, used to better position windows for debugging purpose
     //resize the windows
@@ -162,6 +162,45 @@ void VideoProcessor::loadExpectedValue(char* eVFilePath){
         expectedValueFile >> expectedValues[j];
     expectedValueFile.close();
 }
+
+void VideoProcessor::loadExpectedValueFromCSV(char* eVFilePath){
+    //Open expected value file
+    ifstream expectedValueFile;
+    expectedValueFile.open(eVFilePath);
+
+    //dynamically create the array to hold expected value data
+    int frameCount = (int)cap.get(CV_CAP_PROP_FRAME_COUNT);
+    expectedValues = new int[frameCount];
+    string resultOneline;
+    char buffer[256];
+    //five extra info not needed
+    expectedValueFile.getline(buffer ,256, ',');
+    expectedValueFile.getline(buffer ,256, ',');
+    expectedValueFile.getline(buffer ,256, ',');
+    expectedValueFile.getline(buffer ,256, ',');
+    expectedValueFile.getline(buffer ,256, ',');
+    for(int i = 0; i < frameCount; i++){
+        expectedValueFile.getline(buffer ,256, ',');
+        expectedValues[i] = atoi(buffer);
+    }
+
+
+
+
+//    vector<string> resultList = split(resultOneline, ",");
+//    cout << "vector" << resultList.size();
+//    for(int i = 5; i < 100; i++){
+//        cout << resultList.at(i) << endl;
+//    }
+    //convert str array to int array
+//    int* resultArray = new int[arrayLength-5];
+//    for(int i = 5; i < arrayLength; i++){
+//        resultArray[i-5] = atoi((const char*)resultArray[i].c_str());
+//        cout << resultArray[i-5] << endl;
+//    }
+
+}
+
 
 void VideoProcessor::writeResultToCSV(char* csvPath){
     //open output file
