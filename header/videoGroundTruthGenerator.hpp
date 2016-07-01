@@ -1,3 +1,6 @@
+#ifndef VIDEOGROUNDTRUTHGENERATOR_HPP_INCLUDED
+#define VIDEOGROUNDTRUTHGENERATOR_HPP_INCLUDED
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -6,8 +9,8 @@
 #include <string>
 #include <fstream>
 
-#include "roboHeaderFile.h"
-
+#include "roboHeaderFile.hpp"
+#include "videoProcessor.hpp"
 using namespace cv;
 using namespace std;
 
@@ -44,3 +47,5 @@ void processVideo();
 void writeResultToCSV(char* csvPath);
 
 };
+
+#endif // ROBOHEADERFILE_INCLUDED

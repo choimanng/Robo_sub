@@ -1,54 +1,20 @@
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <iostream>
-#include <math.h>
-#include <string>
-#include <fstream>
-
-#include "roboHeaderFile.h"
+#include "../header/videoProcessor.hpp"
 
 using namespace cv;
 using namespace std;
 
+//UI key constant for visual debugging
+int ESCAPE = 1048603;
+int SPACE = 1048608;
+int RIGHT = 2555904;
+int LEFT = 2424832;
 
-
-class VideoProcessor{
-public:
-
-//variables that affect the target's identification
-int H_MIN = 0;
-int H_MAX = 30;
-int S_MIN = 0;
-int S_MAX = 255;
-int V_MIN = 200;
-int V_MAX = 255;
-int erodeDilateRepeat = 2;
-Mat erodeDilateKernel = getStructuringElement( MORPH_RECT, Size(11 , 11));
-
-//opencv operational objects
-VideoCapture cap; //object used to read video
-Mat unprocessedFrame; //original one frame from video
-Mat hsvFrame; //segmented frame in hsv colorspace
-Mat binaryFrame;  //black and white frame with white being the color of interest
-vector<vector<Point> > contours;
-int videoPos = 0;
-
-//UI setting
-int waitKeyTime = 1;
-
-//for this abstract video pricessor, the recorded result is simply num of contours found
-int* numOfTargetPerFrame;
-
-//recording and comparing result
-int* expectedValues;
-
-VideoProcessor(string videoFilePath){
+VideoProcessor::VideoProcessor(string videoFilePath){
     cap =  VideoCapture(videoFilePath);     //input video file or from camera
     if(!cap.isOpened())return;
 }
 
-virtual void processFrame(){
+void VideoProcessor::processFrame(){
     //resize the frame
     //resize(frame,frame,Size(frame.cols * resizeRatio , frame.rows * resizeRatio ));
     cvtColor(unprocessedFrame, hsvFrame, CV_BGR2HSV);
@@ -75,11 +41,11 @@ virtual void processFrame(){
     findContours(binaryFrame.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 }
 
-void recordCurrentFrameResult(){
+void VideoProcessor::recordCurrentFrameResult(){
     numOfTargetPerFrame[videoPos] = contours.size();
 }
 
-void processVideo(){
+void VideoProcessor::processVideo(){
     //restart video no matter what
     videoPos = 0;
     cap.set(CV_CAP_PROP_POS_FRAMES,0);
@@ -95,7 +61,7 @@ void processVideo(){
 
 
 //debugging or testing functions
-void generateGUI(){
+void VideoProcessor::generateGUI(){
     //create the windows
     namedWindow( "Original", WINDOW_NORMAL );
     namedWindow( "HSV", WINDOW_NORMAL );
@@ -129,7 +95,7 @@ void generateGUI(){
     moveWindow("Control", 800, baseHeight+25);
 }
 
-virtual void updateGUI(){
+void VideoProcessor::updateGUI(){
     imshow("Original", unprocessedFrame);
     imshow("HSV", hsvFrame);
     imshow("Binary", binaryFrame);
@@ -146,7 +112,7 @@ virtual void updateGUI(){
     }
 }
 
-void processVideoDebug(){
+void VideoProcessor::processVideoDebug(){
     //restart video no matter what
     videoPos = 0;
     cap.set(CV_CAP_PROP_POS_FRAMES,0);
@@ -168,7 +134,7 @@ void processVideoDebug(){
     }
 }
 
-String getSetting(){
+String VideoProcessor::getSetting(){
     stringstream s;
     s << "H_MIN=" << H_MIN << "; H_MAX=" << H_MAX << "; S_MIN;=" << S_MIN << "; S_MAX=" << S_MAX << "; V_MIN=" << V_MIN << "; V_MAX=" << V_MAX <<
     "; erodeDilateKernel size=" << erodeDilateKernel.size() << "; erodeDilateRepeat=" << erodeDilateRepeat;
@@ -177,7 +143,7 @@ String getSetting(){
 
 //recording and comparing result
 
-void loadExpectedValue(char* eVFilePath){
+void VideoProcessor::loadExpectedValue(char* eVFilePath){
     //Open expected value file
     ifstream expectedValueFile;
     expectedValueFile.open(eVFilePath);
@@ -190,7 +156,7 @@ void loadExpectedValue(char* eVFilePath){
     expectedValueFile.close();
 }
 
-void writeResultToCSV(char* csvPath){
+void VideoProcessor::writeResultToCSV(char* csvPath){
     //open output file
     ofstream cvsResultFile;
     cvsResultFile.open(csvPath, ios_base::app);
@@ -219,4 +185,3 @@ void writeResultToCSV(char* csvPath){
 //    for(int i = 0; i < 100; i++)
 //        cout << expectedValues[i];
 }
-};

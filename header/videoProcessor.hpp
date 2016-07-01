@@ -1,3 +1,6 @@
+#ifndef VIDEOPROCESSOR_INCLUDED
+#define VIDEOPROCESSOR_INCLUDED
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -6,12 +9,16 @@
 #include <string>
 #include <fstream>
 
-#include "roboHeaderFile.h"
+#include "roboHeaderFile.hpp"
 
 using namespace cv;
 using namespace std;
 
-
+//UI key constant for visual debugging
+extern int ESCAPE;
+extern int SPACE;
+extern int RIGHT;
+extern int LEFT;
 
 class VideoProcessor{
 public:
@@ -59,3 +66,6 @@ String getSetting();
 void loadExpectedValue(char* eVFilePath);
 void writeResultToCSV(char* csvPath);
 };
+
+
+#endif // ROBOHEADERFILE_INCLUDED

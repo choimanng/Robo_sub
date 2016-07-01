@@ -1,20 +1,7 @@
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <iostream>
-#include <math.h>
-#include <string>
-#include <fstream>
+#include "../header/downVideoProcessor.hpp"
 
-#include "roboHeaderFile.h"
-
-struct PathMarker {
-//specifiy a type of data structure for the rectangle's specs
-    vector<vector<Point> > contour;
-    Point2f pXY;    Point2f cXY;
-    float width;    float height;       float angle;
-    double area;    float distance;     bool ignore;
-};
+using namespace std;
+using namespace cv;
 
 DownVideoProcessor::DownVideoProcessor(string videoFilePath):VideoProcessor(videoFilePath){
 }
@@ -161,4 +148,3 @@ void DownVideoProcessor::updateGUI(){
     drawPathMarkers();
     VideoProcessor::updateGUI();
 }
-};
