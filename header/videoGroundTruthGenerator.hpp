@@ -41,6 +41,8 @@ void generateGUI();
 
 virtual void updateGUI();
 
+int getCurrentFrame();
+
 void processVideo();
 
 void writeResultToCSV(char* csvPath);

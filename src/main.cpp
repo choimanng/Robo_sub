@@ -14,6 +14,9 @@ int main(int argc, char *argv[]){
 
     VideoGroundTruthGenerator v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
     v.processVideo();
+    for(int i = 0; i < 300; i++){
+        cout << i << ": " << v.expectedValues[i] << endl;
+    }
 }
 
 

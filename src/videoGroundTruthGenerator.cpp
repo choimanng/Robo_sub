@@ -4,6 +4,10 @@
 using namespace cv;
 using namespace std;
 
+bool isNumberKey(int key){
+    return 0 <= key-ZERO && key-ZERO <=9;
+}
+
 VideoGroundTruthGenerator::VideoGroundTruthGenerator(string videoFilePath){
     cap =  VideoCapture(videoFilePath);     //input video file or from camera
     if(!cap.isOpened()){
@@ -13,7 +17,12 @@ VideoGroundTruthGenerator::VideoGroundTruthGenerator(string videoFilePath){
 
 void VideoGroundTruthGenerator::recordCurrentFrameResult(){
     //is minus 1 because videoPos has to be updated in function updateGUI
-    expectedValues[videoPos-1] = currentFrameGroundTruth;
+    expectedValues[getCurrentFrame()] = currentFrameGroundTruth;
+}
+
+int VideoGroundTruthGenerator::getCurrentFrame(){
+    //(int)cap.get(CV_CAP_PROP_POS_FRAMES) always return the next frame to be decoded
+    return (int)cap.get(CV_CAP_PROP_POS_FRAMES)-1;
 }
 
 //debugging or testing functions
@@ -40,62 +49,92 @@ void VideoGroundTruthGenerator::generateGUI(){
 void VideoGroundTruthGenerator::updateGUI(){
     setLabel(unprocessedFrame, convertInt(currentFrameGroundTruth), Point(20, 20));
     imshow("Original", unprocessedFrame);
-
-    //update time trackbar
-    if(cap.get(CV_CAP_PROP_POS_FRAMES)- videoPos != 1)
-    {
-        cap.set(CV_CAP_PROP_POS_FRAMES, videoPos);
-    }
-    else
-    {
-        videoPos++;
-        setTrackbarPos("Frame", "Playback", videoPos);
-    }
+    setTrackbarPos("Frame", "Playback", getCurrentFrame());
 }
 
 void VideoGroundTruthGenerator::processVideo(){
     //restart video no matter what
-    videoPos = 0;
     cap.set(CV_CAP_PROP_POS_FRAMES,0);
     generateGUI();
     //reset result array
     expectedValues = new int[(int)cap.get(CV_CAP_PROP_FRAME_COUNT)];
-    //process the video until runs out of frames
-    int inputKey = -1;
-    while(cap.read(unprocessedFrame) && inputKey != ESCAPE){
+    cap.read(unprocessedFrame);
+    updateGUI();
+    int inputKey;
+    //in beginning, wait until user enter a number key designating current target count
+    do{
+        inputKey = waitKey();
+    }while(!isNumberKey(inputKey));
+    currentFrameGroundTruth = inputKey-ZERO;
+    updateGUI();
+    //read video until eof
+    while(inputKey!=ESCAPE && cap.read(unprocessedFrame)){
         updateGUI();
-        inputKey = waitKey(waitKeyTime);
-        cout << inputKey << endl;
-        int numberKey = inputKey - ZERO;
-        if(numberKey >= 0 && numberKey < 10){
-            currentFrameGroundTruth = numberKey;
-        }
         recordCurrentFrameResult();
-        if(inputKey == SPACE){//space key pressed, then video enter paused state
+        inputKey = waitKey(waitKeyTime);
+        if(inputKey == SPACE){
             do{
                 inputKey = waitKey();
-                if(inputKey == RIGHT){
-                    //forward one frame is similar to normal playing one frame then pause again
-                    cap.read(unprocessedFrame);
-                    updateGUI();
-                }
-                else if(inputKey == LEFT){
-                    videoPos = videoPos-2 >= 0 ? videoPos-2 : 0;
-                    cap.set(CV_CAP_PROP_POS_FRAMES, videoPos);
-                    cap.read(unprocessedFrame);
-                    updateGUI();
-                    currentFrameGroundTruth = expectedValues[videoPos-1];
-                }
-                int numberKey = inputKey - ZERO;
-                if(numberKey >= 0 && numberKey < 10){
-                    currentFrameGroundTruth = numberKey;
+                cout << inputKey << endl;
+                if(isNumberKey(inputKey)){
+                    currentFrameGroundTruth = inputKey-ZERO;
                     recordCurrentFrameResult();
+                    updateGUI(); //in order to show the updated target count
                 }
-            }while(inputKey != SPACE && inputKey != ESCAPE);//space key pressed again to resume
+                else if(inputKey == RIGHT){//forward 1 frame
+                    cap.read(unprocessedFrame);
+                    currentFrameGroundTruth = expectedValues[getCurrentFrame()];
+                    updateGUI();
+                }
+                else if(inputKey == LEFT){//backward 1 frame
+                    cap.set(CV_CAP_PROP_POS_FRAMES, getCurrentFrame()-1);
+                    cap.read(unprocessedFrame);
+                    currentFrameGroundTruth = expectedValues[getCurrentFrame()];
+                    updateGUI();
+                }
+                else if(inputKey == SHIFT_RIGHT){//forward 5 frames
+                    cap.set(CV_CAP_PROP_POS_FRAMES, getCurrentFrame()+5);
+                    cap.read(unprocessedFrame);
+                    currentFrameGroundTruth = expectedValues[getCurrentFrame()];
+                    updateGUI();
+                }
+                else if(inputKey == SHIFT_LEFT){//backward 5 frames
+                    cap.set(CV_CAP_PROP_POS_FRAMES, getCurrentFrame()-5);
+                    cap.read(unprocessedFrame);
+                    currentFrameGroundTruth = expectedValues[getCurrentFrame()];
+                    updateGUI();
+                }
+                else if(inputKey == CTRL_RIGHT){//forward 10 frames
+                    cap.set(CV_CAP_PROP_POS_FRAMES, getCurrentFrame()+10);
+                    cap.read(unprocessedFrame);
+                    currentFrameGroundTruth = expectedValues[getCurrentFrame()];
+                    updateGUI();
+                }
+                else if(inputKey == CTRL_LEFT){//backward 10 frames
+                    cap.set(CV_CAP_PROP_POS_FRAMES, getCurrentFrame()-10);
+                    cap.read(unprocessedFrame);
+                    currentFrameGroundTruth = expectedValues[getCurrentFrame()];
+                    updateGUI();
+                }
+                else if(inputKey == CTRL_SHIFT_RIGHT){//forward 30 frames
+                    cap.set(CV_CAP_PROP_POS_FRAMES, getCurrentFrame()+30);
+                    cap.read(unprocessedFrame);
+                    currentFrameGroundTruth = expectedValues[getCurrentFrame()];
+                    updateGUI();
+                }
+                else if(inputKey == CTRL_SHIFT_LEFT){//backward 30 frames
+                    cap.set(CV_CAP_PROP_POS_FRAMES, getCurrentFrame()-30);
+                    cap.read(unprocessedFrame);
+                    currentFrameGroundTruth = expectedValues[getCurrentFrame()];
+                    updateGUI();
+                }
+            }while(inputKey!=SPACE && inputKey!=ESCAPE);
+        }
+        else if(isNumberKey(inputKey)){
+            currentFrameGroundTruth = inputKey-ZERO;
+            recordCurrentFrameResult();
         }
     }
-//    for(int i = 0; i < 100; i++)
-//        cout << expectedValues[i] << endl;
 }
 
 void VideoGroundTruthGenerator::writeResultToCSV(char* csvPath){

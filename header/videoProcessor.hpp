@@ -17,8 +17,12 @@ extern int ESCAPE;
 extern int SPACE;
 extern int RIGHT;
 extern int LEFT;
-extern int CTRLRIGHT;
-extern int CTRLLEFT;
+extern int SHIFT_RIGHT;
+extern int SHIFT_LEFT;
+extern int CTRL_RIGHT;
+extern int CTRL_LEFT;
+extern int CTRL_SHIFT_RIGHT;
+extern int CTRL_SHIFT_LEFT;
 extern int ZERO;
 
 class VideoProcessor{
