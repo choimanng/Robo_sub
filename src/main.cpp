@@ -1,13 +1,28 @@
-#include "./downVideoProcessor.cpp"
-//#include <opencv2/core/core.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>
-//#include <opencv2/highgui/highgui.hpp>
-//#include <iostream>
-//#include <math.h>
-//#include <string>
-//#include <fstream>
-//using namespace cv;
-//using namespace std;
+#include "./roboHeaderFile.h"
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <iostream>
+#include <math.h>
+#include <string>
+#include <fstream>
+using namespace cv;
+using namespace std;
+
+int main(int argc, char *argv[]){
+//    DownVideoProcessor v("../../sample videos/Pipe.avi");
+//    v.processVideoDebug();
+//    v.loadExpectedValue("./result/Pipe_Data.txt");
+//    v.writeResultToCSV("./result/Pipes_Result.cvs");
+    cout << "run" << endl;
+    VideoGroundTruthGenerator v("../../sample videos/Pipe.avi");
+    v.processVideo();
+    cout << "run" << endl;
+}
+
+
+
+
 //
 //struct RectSpecs {
 ////specifiy a type of data structure for the rectangle's specs
@@ -384,8 +399,4 @@
 //
 ////each run takes around 345 seconds = 5.6 min
 
-int main(int argc, char *argv[]){
-    DownVideoProcessor v("../../sample videos/Pipe.avi");
-    v.processVideoDebug();
-    cout << v.getSetting() << endl;
-}
+

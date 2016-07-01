@@ -6,14 +6,12 @@
 #include <string>
 #include <fstream>
 
+#include "roboHeaderFile.h"
+
 using namespace cv;
 using namespace std;
 
-//UI key constant for visual debugging
-const int ESCAPE = 1048603;
-const int SPACE = 1048608;
-const int RIGHT = 2555904;
-const int LEFT = 2424832;
+
 
 class VideoProcessor{
 public:
@@ -37,10 +35,13 @@ vector<vector<Point> > contours;
 int videoPos = 0;
 
 //UI setting
-int waitKeyTime = 30;
+int waitKeyTime = 1;
 
 //for this abstract video pricessor, the recorded result is simply num of contours found
 int* numOfTargetPerFrame;
+
+//recording and comparing result
+int* expectedValues;
 
 VideoProcessor(string videoFilePath){
     cap =  VideoCapture(videoFilePath);     //input video file or from camera
@@ -85,10 +86,10 @@ void processVideo(){
     //reset result array
     numOfTargetPerFrame = new int[(int)cap.get(CV_CAP_PROP_FRAME_COUNT)];
     //process the video until runs out of frames
-    for(;cap.read(unprocessedFrame); videoPos++){
+    while(cap.read(unprocessedFrame)){
         processFrame();
         recordCurrentFrameResult();
-        cout << numOfTargetPerFrame[videoPos] << endl;
+        videoPos++;
     }
 }
 
@@ -156,8 +157,8 @@ void processVideoDebug(){
     int inputKey = -1;
     while(cap.read(unprocessedFrame) && inputKey != ESCAPE){
         processFrame();
-        updateGUI();
         recordCurrentFrameResult();
+        updateGUI();
         inputKey = waitKey(waitKeyTime);
         if(inputKey == SPACE){//space key pressed, then video enter paused state
             do{
@@ -174,7 +175,48 @@ String getSetting(){
     return s.str();
 }
 
-void writeResultToCSV(string csvPath){
+//recording and comparing result
 
+void loadExpectedValue(char* eVFilePath){
+    //Open expected value file
+    ifstream expectedValueFile;
+    expectedValueFile.open(eVFilePath);
+
+    //dynamically create the array to hold expected value data
+    int frameCounte = (int)cap.get(CV_CAP_PROP_FRAME_COUNT);
+    expectedValues = new int[frameCounte];
+    for (int j=0; j<frameCounte; j++)
+        expectedValueFile >> expectedValues[j];
+    expectedValueFile.close();
+}
+
+void writeResultToCSV(char* csvPath){
+    //open output file
+    ofstream cvsResultFile;
+    cvsResultFile.open(csvPath, ios_base::app);
+
+    //write setting to csv file
+    cvsResultFile << getSetting();
+
+    //write error count
+    int frameCount = (int)cap.get(CV_CAP_PROP_FRAME_COUNT);
+    int errorCount = 0;
+    int frameDifferenceCount = 0;
+    for(int i = 0; i < frameCount; i++){
+        errorCount += abs(expectedValues[i] - numOfTargetPerFrame[i]);
+        if(expectedValues[i] != numOfTargetPerFrame[i]){
+            frameDifferenceCount++;
+        }
+    }
+    cvsResultFile << ",wrong_target_count=" << errorCount << "," << "frameDifferenceCount=" << frameDifferenceCount;
+
+    //write individual frame's target count in this processing
+    for (int j=0; j<frameCount; j++){
+        cvsResultFile << "," << numOfTargetPerFrame[j];
+    }
+    cvsResultFile << endl;
+    cvsResultFile.close();
+//    for(int i = 0; i < 100; i++)
+//        cout << expectedValues[i];
 }
 };

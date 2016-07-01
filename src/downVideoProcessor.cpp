@@ -1,4 +1,12 @@
-#include "./videoProcessor.cpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <iostream>
+#include <math.h>
+#include <string>
+#include <fstream>
+
+#include "roboHeaderFile.h"
 
 struct PathMarker {
 //specifiy a type of data structure for the rectangle's specs
@@ -8,15 +16,10 @@ struct PathMarker {
     double area;    float distance;     bool ignore;
 };
 
-class DownVideoProcessor: public VideoProcessor{
-public:
-
-vector<PathMarker> pathMarkers;
-
-DownVideoProcessor(string videoFilePath):VideoProcessor(videoFilePath){
+DownVideoProcessor::DownVideoProcessor(string videoFilePath):VideoProcessor(videoFilePath){
 }
 
-void processFrame(){
+void DownVideoProcessor::processFrame(){
     VideoProcessor::processFrame();
     pathMarkers.clear();
     for(int i = 0; i < contours.size(); i++)
@@ -27,13 +30,13 @@ void processFrame(){
     }
 }
 
-string convertInt(int number){
+string DownVideoProcessor::convertInt(int number){
     stringstream ss;//create a stringstream
     ss << number;//add number to the stream
     return ss.str();//return a string with the contents of the stream
 }
 
-PathMarker findPathMarker (vector<Point> rectContour){
+PathMarker DownVideoProcessor::findPathMarker (vector<Point> rectContour){
     //get the moments and centers of the contour
     Moments mu = moments( rectContour, false );
     Point2f cXY = Point2f(mu.m10/mu.m00, mu.m01/mu.m00);
@@ -122,7 +125,7 @@ PathMarker findPathMarker (vector<Point> rectContour){
     return my_pathMarker;
 }
 
-void setLabel(Mat im, string label, Point org){
+void DownVideoProcessor::setLabel(Mat im, string label, Point org){
     int fontface = FONT_HERSHEY_SIMPLEX;
     double scale = 0.4;
     int thickness = 1;
@@ -132,7 +135,7 @@ void setLabel(Mat im, string label, Point org){
     putText(im, label, org, fontface, scale, CV_RGB(255,255,255), thickness, 8);
 }
 
-void drawPathMarkers(){
+void DownVideoProcessor::drawPathMarkers(){
     for(int i = 0; i < pathMarkers.size(); i++)
     {
         //draw the rotated rectangle
@@ -154,7 +157,7 @@ void drawPathMarkers(){
     }
 }
 
-void updateGUI(){
+void DownVideoProcessor::updateGUI(){
     drawPathMarkers();
     VideoProcessor::updateGUI();
 }
