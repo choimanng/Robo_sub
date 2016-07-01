@@ -6,8 +6,11 @@ using namespace std;
 //UI key constant for visual debugging
 int ESCAPE = 1048603;
 int SPACE = 1048608;
-int RIGHT = 2555904;
-int LEFT = 2424832;
+int RIGHT = 1113939;
+int LEFT = 1113937;
+int CTRLRIGHT = 1376083;
+int CTRLLEFT = 1376081;
+int ZERO = 1114032;
 
 VideoProcessor::VideoProcessor(string videoFilePath){
     cap =  VideoCapture(videoFilePath);     //input video file or from camera

@@ -9,8 +9,6 @@
 #include <string>
 #include <fstream>
 
-#include "roboHeaderFile.hpp"
-
 using namespace cv;
 using namespace std;
 
@@ -19,6 +17,9 @@ extern int ESCAPE;
 extern int SPACE;
 extern int RIGHT;
 extern int LEFT;
+extern int CTRLRIGHT;
+extern int CTRLLEFT;
+extern int ZERO;
 
 class VideoProcessor{
 public:

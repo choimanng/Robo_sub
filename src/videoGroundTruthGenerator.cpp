@@ -12,7 +12,8 @@ VideoGroundTruthGenerator::VideoGroundTruthGenerator(string videoFilePath){
 }
 
 void VideoGroundTruthGenerator::recordCurrentFrameResult(){
-    expectedValues[videoPos] = contours.size();
+    //is minus 1 because videoPos has to be updated in function updateGUI
+    expectedValues[videoPos-1] = currentFrameGroundTruth;
 }
 
 //debugging or testing functions
@@ -26,8 +27,8 @@ void VideoGroundTruthGenerator::generateGUI(){
     //base width and height are derived from frame size, used to better position windows for debugging purpose
     //resize the windows
     int baseWidth, baseHeight;
-    baseWidth = (int)(cap.get(CV_CAP_PROP_FRAME_WIDTH)*0.8);
-    baseHeight = (int)(cap.get(CV_CAP_PROP_FRAME_HEIGHT)*0.8);
+    baseWidth = (int)(cap.get(CV_CAP_PROP_FRAME_WIDTH));
+    baseHeight = (int)(cap.get(CV_CAP_PROP_FRAME_HEIGHT));
     resizeWindow("Original", baseWidth, baseHeight);
     resizeWindow("Playback", 800, 50);
 
@@ -37,6 +38,7 @@ void VideoGroundTruthGenerator::generateGUI(){
 }
 
 void VideoGroundTruthGenerator::updateGUI(){
+    setLabel(unprocessedFrame, convertInt(currentFrameGroundTruth), Point(20, 20));
     imshow("Original", unprocessedFrame);
 
     //update time trackbar
@@ -62,22 +64,38 @@ void VideoGroundTruthGenerator::processVideo(){
     int inputKey = -1;
     while(cap.read(unprocessedFrame) && inputKey != ESCAPE){
         updateGUI();
-        recordCurrentFrameResult();
         inputKey = waitKey(waitKeyTime);
-
-        if(inputKey == RIGHT){
-
+        cout << inputKey << endl;
+        int numberKey = inputKey - ZERO;
+        if(numberKey >= 0 && numberKey < 10){
+            currentFrameGroundTruth = numberKey;
         }
-        else if(inputKey == LEFT){
-
-        }
+        recordCurrentFrameResult();
         if(inputKey == SPACE){//space key pressed, then video enter paused state
             do{
-//                cout << inputKey << endl;
-                inputKey = waitKey(0);
+                inputKey = waitKey();
+                if(inputKey == RIGHT){
+                    //forward one frame is similar to normal playing one frame then pause again
+                    cap.read(unprocessedFrame);
+                    updateGUI();
+                }
+                else if(inputKey == LEFT){
+                    videoPos = videoPos-2 >= 0 ? videoPos-2 : 0;
+                    cap.set(CV_CAP_PROP_POS_FRAMES, videoPos);
+                    cap.read(unprocessedFrame);
+                    updateGUI();
+                    currentFrameGroundTruth = expectedValues[videoPos-1];
+                }
+                int numberKey = inputKey - ZERO;
+                if(numberKey >= 0 && numberKey < 10){
+                    currentFrameGroundTruth = numberKey;
+                    recordCurrentFrameResult();
+                }
             }while(inputKey != SPACE && inputKey != ESCAPE);//space key pressed again to resume
         }
     }
+//    for(int i = 0; i < 100; i++)
+//        cout << expectedValues[i] << endl;
 }
 
 void VideoGroundTruthGenerator::writeResultToCSV(char* csvPath){

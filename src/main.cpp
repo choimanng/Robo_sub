@@ -1,20 +1,19 @@
 #include "../header/downVideoProcessor.hpp"
 #include "../header/videoGroundTruthGenerator.hpp"
 #include "../header/videoProcessor.hpp"
-#include "../header/roboHeaderFile.hpp"
 
 using namespace cv;
 using namespace std;
 
 int main(int argc, char *argv[]){
     cout << "main.cpp running" << endl;
-    DownVideoProcessor v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
-    v.processVideoDebug();
-    v.loadExpectedValue("./result/Pipe_Data.txt");
-    v.writeResultToCSV("./result/Pipes_Result.cvs");
+//    DownVideoProcessor v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
+//    v.processVideoDebug();
+//    v.loadExpectedValue("./result/Pipe_Data.txt");
+//    v.writeResultToCSV("./result/Pipes_Result.cvs");
 
-//    VideoGroundTruthGenerator v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
-//    v.processVideo();
+    VideoGroundTruthGenerator v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
+    v.processVideo();
 }
 
 

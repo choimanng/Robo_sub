@@ -9,11 +9,13 @@
 #include <string>
 #include <fstream>
 
-#include "roboHeaderFile.hpp"
 #include "videoProcessor.hpp"
 
 using namespace std;
 using namespace cv;
+
+void setLabel(Mat im, string label, Point org);
+string convertInt(int number);
 
 struct PathMarker {
 //specifiy a type of data structure for the rectangle's specs
@@ -35,8 +37,6 @@ void processFrame();
 PathMarker findPathMarker (vector<Point> rectContour);
 
 //gui functions for visual confirmation, mainly for debugging
-string convertInt(int number);
-void setLabel(Mat im, string label, Point org);
 void drawPathMarkers();
 void updateGUI();
 

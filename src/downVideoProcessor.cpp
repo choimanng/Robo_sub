@@ -3,6 +3,22 @@
 using namespace std;
 using namespace cv;
 
+void setLabel(Mat im, string label, Point org){
+    int fontface = FONT_HERSHEY_SIMPLEX;
+    double scale = 0.4;
+    int thickness = 1;
+    int baseline = 0;
+    Size text = getTextSize(label, fontface, scale, thickness, &baseline);
+    rectangle(im, org + Point(0, baseline), org + Point(text.width, -text.height), CV_RGB(0,0,0), CV_FILLED);
+    putText(im, label, org, fontface, scale, CV_RGB(255,255,255), thickness, 8);
+}
+
+string convertInt(int number){
+    stringstream ss;//create a stringstream
+    ss << number;//add number to the stream
+    return ss.str();//return a string with the contents of the stream
+}
+
 DownVideoProcessor::DownVideoProcessor(string videoFilePath):VideoProcessor(videoFilePath){
 }
 
@@ -15,12 +31,6 @@ void DownVideoProcessor::processFrame(){
         PathMarker pathMarkerSpecs = findPathMarker(contours[i]);
         pathMarkers.push_back(pathMarkerSpecs);
     }
-}
-
-string DownVideoProcessor::convertInt(int number){
-    stringstream ss;//create a stringstream
-    ss << number;//add number to the stream
-    return ss.str();//return a string with the contents of the stream
 }
 
 PathMarker DownVideoProcessor::findPathMarker (vector<Point> rectContour){
@@ -110,16 +120,6 @@ PathMarker DownVideoProcessor::findPathMarker (vector<Point> rectContour){
 
     //return the rectSpecs
     return my_pathMarker;
-}
-
-void DownVideoProcessor::setLabel(Mat im, string label, Point org){
-    int fontface = FONT_HERSHEY_SIMPLEX;
-    double scale = 0.4;
-    int thickness = 1;
-    int baseline = 0;
-    Size text = getTextSize(label, fontface, scale, thickness, &baseline);
-    rectangle(im, org + Point(0, baseline), org + Point(text.width, -text.height), CV_RGB(0,0,0), CV_FILLED);
-    putText(im, label, org, fontface, scale, CV_RGB(255,255,255), thickness, 8);
 }
 
 void DownVideoProcessor::drawPathMarkers(){
