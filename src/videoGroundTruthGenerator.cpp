@@ -31,7 +31,7 @@ void VideoGroundTruthGenerator::generateGUI(){
     namedWindow( "Original", WINDOW_NORMAL );
     namedWindow( "Playback", WINDOW_NORMAL );
     createTrackbar("Frame", "Playback", &videoPos, cap.get(CV_CAP_PROP_FRAME_COUNT));
-    createTrackbar("waitKeyTime", "Playback", &waitKeyTime, 100);
+    createTrackbar("waitKeyTime", "Playback", &waitKeyTime, 1000);
 
     //base width and height are derived from frame size, used to better position windows for debugging purpose
     //resize the windows

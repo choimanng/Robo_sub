@@ -63,6 +63,7 @@ void VideoProcessor::processVideo(){
         processFrame();
         recordCurrentFrameResult();
         videoPos++;
+        cout <<  getSetting() << ": " << videoPos << " of " << (int)cap.get(CV_CAP_PROP_FRAME_COUNT) << endl;
     }
 }
 
@@ -220,7 +221,7 @@ void VideoProcessor::writeResultToCSV(char* csvPath){
             frameDifferenceCount++;
         }
     }
-    cvsResultFile << ",wrong_target_count=" << errorCount << "," << "frameDifferenceCount=" << frameDifferenceCount;
+    cvsResultFile << ",wrong_target_count=" << errorCount << "," << "frameDifferenceCount=" << frameDifferenceCount <<",,";
 
     //write individual frame's target count in this processing
     for (int j=0; j<frameCount; j++){

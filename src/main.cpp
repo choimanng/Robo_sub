@@ -6,11 +6,76 @@ using namespace cv;
 using namespace std;
 
 int main(int argc, char *argv[]){
-    cout << "main.cpp running" << endl;
-    DownVideoProcessor v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
-    v.processVideoDebug();
-//    v.loadExpectedValue("./result/Pipe_Data.txt");
-//    v.writeResultToCSV("./result/Pipes_Result.cvs");
+//VideoGroundTruthGenerator v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe8xSpeed.avi");
+//    v.processVideo();
+//    v.writeResultToCSV("result/000Pipes_Result_Final.csv");
+    cout << "unit test begin running" << endl;
+    DownVideoProcessor v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe32x.avi");
+    v.loadExpectedValueFromCSV("/home/mong/Desktop/robosub/opencv/actual code/Robo_sub/result/000Pipes_Result_Final32x.csv");
+    for(v.H_MIN = 0; v.H_MIN <= 20; v.H_MIN+=5){
+        for(v.H_MAX = 40; v.H_MAX > v.H_MIN; v.H_MAX-=5){
+            for(v.S_MIN = 0; v.S_MIN <= 225; v.S_MIN+=25){
+                for(v.S_MAX = 255; v.S_MAX > v.S_MIN; v.S_MAX-=25){
+                    for(v.V_MIN = 190; v.V_MIN < 250; v.V_MIN+=15){
+                        for(v.V_MAX = 255; v.V_MAX > v.V_MIN; v.V_MAX-=15){
+                            v.processVideo();
+                            v.writeResultToCSV("/home/mong/Desktop/robosub/opencv/actual code/Robo_sub/result/000Pipes_Result_Final32x.csv");
+                        }
+                    }
+                }
+            }
+        }
+    }
+//    VideoGroundTruthGenerator v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe32x.avi");
+//    v.processVideo();
+//    v.writeResultToCSV("result/000Pipes_Result_Final32x.csv");
+
+
+
+}
+/**
+h min 0-50
+h max(which really controls the range of h)
+s min
+s max(which really controls the range of s)
+v min
+v max(which really controls the range of v)
+erode & dilate size
+erode & dilate repeats
+
+
+**/
+
+
+//int main(int argc, char *argv[]){
+//    cout << "main.cpp running" << endl;
+//    DownVideoProcessor v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
+//    v.loadExpectedValueFromCSV("result/000Pipes_Result_Final.csv");
+///**
+//h min 160-50
+//h max(which really controls the range of h)
+//s min
+//s max(which really controls the range of s)
+//v min
+//v max(which really controls the range of v)
+//erode & dilate size
+//erode & dilate repeats
+//
+//
+//**/
+
+//    int hBound = 180;
+//    for(v.H_MIN = 160; v.H_MIN <= hBound; v.H_MIN++){
+//        if(v.H_MIN >= 180){
+//            v.H_MIN = 0;
+//            hBound = 30;
+//        }
+//        for(v.H_MAX = 50; v.H_MAX >= 1; v.H_MAX--){
+//            v.processVideo();
+//            v.writeResultToCSV("result/000Pipes_Result_Final.csv");
+//        }
+//    }
+
 
 //    VideoGroundTruthGenerator v("/home/mong/Desktop/robosub/opencv/sample videos/Pipe.avi");
 //    v.processVideo();
@@ -25,7 +90,6 @@ int main(int argc, char *argv[]){
 //        cout << i << ": " << (old[i] - newE[i]) << endl;
 //    }
 
-}
 
 
 
