@@ -11,9 +11,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
+#include <ftw.h>
+#include <fnmatch.h>
 
 using namespace cv;
 using namespace std;
+
+
 
 //UI key constant for visual debugging
 extern int ESCAPE;
@@ -30,6 +34,8 @@ extern int ZERO;
 
 class VideoProcessor{
 public:
+
+vector<string> imageNameList;
 
 //variables that affect the target's identification
 int H_MIN = 0;
@@ -60,9 +66,13 @@ int* expectedValues;
 
 //function that processes the video
 VideoProcessor(string videoFilePath);
+VideoProcessor(vector<string> input);
 virtual void processFrame();
 void recordCurrentFrameResult();
 void processVideo();
+
+//function that process image list
+void processImageList();
 
 //debugging or testing functions
 void generateGUI();

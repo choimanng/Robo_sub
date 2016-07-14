@@ -31,6 +31,7 @@ public:
 vector<PathMarker> pathMarkers;
 
 DownVideoProcessor(string videoFilePath);
+DownVideoProcessor(vector<string> input);
 
 //functions that process the videos
 void processFrame();

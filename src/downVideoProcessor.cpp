@@ -22,6 +22,9 @@ string convertInt(int number){
 DownVideoProcessor::DownVideoProcessor(string videoFilePath):VideoProcessor(videoFilePath){
 }
 
+DownVideoProcessor::DownVideoProcessor(vector<string> input):VideoProcessor(input){
+}
+
 void DownVideoProcessor::processFrame(){
     VideoProcessor::processFrame();
     pathMarkers.clear();

@@ -21,6 +21,10 @@ VideoProcessor::VideoProcessor(string videoFilePath){
     if(!cap.isOpened())return;
 }
 
+VideoProcessor::VideoProcessor(vector<string> input){
+    imageNameList = input;
+}
+
 void VideoProcessor::processFrame(){
     //resize the frame
     //resize(frame,frame,Size(frame.cols * resizeRatio , frame.rows * resizeRatio ));
@@ -63,11 +67,22 @@ void VideoProcessor::processVideo(){
         processFrame();
         recordCurrentFrameResult();
         videoPos++;
-        cout <<  getSetting() << ": " << videoPos << " of " << (int)cap.get(CV_CAP_PROP_FRAME_COUNT) << endl;
     }
 }
 
+void VideoProcessor::processImageList(){
+    videoPos = 0;
+    numOfTargetPerFrame = new int[imageNameList.size()];
+    while(imageNameList.size()){
+        string curImagePath = imageNameList[videoPos];
+        unprocessedFrame = imread(curImagePath);
+        imageNameList.pop_back();
+        processFrame();
+        recordCurrentFrameResult();
+        videoPos++;
+    }
 
+}
 //debugging or testing functions
 void VideoProcessor::generateGUI(){
     //create the windows
@@ -232,3 +247,4 @@ void VideoProcessor::writeResultToCSV(char* csvPath){
 //    for(int i = 0; i < 100; i++)
 //        cout << expectedValues[i];
 }
+
